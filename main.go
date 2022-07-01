@@ -62,6 +62,9 @@ func main() {
 	retcode = waitCommand(cmd, interrupt)
 }
 
+// waitCommand waits until a command is finished and returns its exit code.
+// Can be interrupted by sending a SIGQUIT or SIGTERM over the interrupt channel,
+// the subprocess is killed and exit code 0 is returned.
 func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 	c := make(chan int)
 	go func() {
@@ -89,11 +92,12 @@ func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 	}
 }
 
-/*
-start -> wait_warmup -> progress -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> progress -> progress -> ...
-start -> wait_warmup -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> stuck -> send_fail_signal
-start -> wait_warmup -> stuck -> send_fail_signal
-*/
+// watchMetrics fetches metric data and ensures that it has progress by at least requiredDelta.
+// If no progress is made, a hang signal is sent and if progress doesn't pick back up, a fail signal is sent.
+//
+// start -> wait_warmup -> progress -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> progress -> progress -> ...
+// start -> wait_warmup -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> stuck -> send_fail_signal
+// start -> wait_warmup -> stuck -> send_fail_signal
 func watchMetrics(tickSleep, warmUpSleep func(), requiredDelta int64, sendFailSignal, sendHangSignal func() error, getMetrics func() (int64, error)) {
 	var prevProgress bool
 	prev, err := getMetrics()

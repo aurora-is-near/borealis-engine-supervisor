@@ -9,12 +9,14 @@ import (
 	"strings"
 )
 
+// promotheusClient is capable of retrieving a scalar metric value from a Promotheus server.
 type promotheusClient struct {
 	url string
 	key string
 	c   http.Client
 }
 
+// Get returns the current metric data.
 func (p *promotheusClient) Get() (int64, error) {
 	resp, err := p.c.Get(p.url)
 	if err != nil {
@@ -23,6 +25,7 @@ func (p *promotheusClient) Get() (int64, error) {
 	return extractMetricsData(resp.Body, p.key)
 }
 
+// NewPromotheusClient returns a client that can fetch a specific metric value from a server.
 func NewPromotheusClient(url, key string) *promotheusClient {
 	return &promotheusClient{
 		url: url,
@@ -31,6 +34,8 @@ func NewPromotheusClient(url, key string) *promotheusClient {
 	}
 }
 
+// extractMetricsData returns the integer value of key in the input.
+// Input is lines containing the key, a space, and the value.
 func extractMetricsData(r io.Reader, key string) (int64, error) {
 	var (
 		result int64
