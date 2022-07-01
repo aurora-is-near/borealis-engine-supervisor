@@ -65,20 +65,26 @@ func main() {
 func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 	c := make(chan int)
 	go func() {
-		if err := cmd.Wait(); err != nil {
-			if exiterr, ok := err.(*exec.ExitError); ok {
-				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-					c <- status.ExitStatus()
-				}
-			}
+		if err := cmd.Wait(); err == nil {
+			c <- 0
+		} else if exiterr, ok := err.(*exec.ExitError); !ok {
+			c <- 0
+		} else if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+			c <- status.ExitStatus()
 		}
-		c <- 0
 	}()
-	select {
-	case <-interrupt:
-		return 0
-	case x := <-c:
-		return x
+	for {
+		select {
+		case v := <-interrupt:
+			if v == syscall.SIGQUIT || v == syscall.SIGTERM {
+				if err := cmd.Process.Kill(); err != nil {
+					log.Error().Msgf("Failed to kill subprocess: %v", err)
+				}
+				return 0
+			}
+		case x := <-c:
+			return x
+		}
 	}
 }
 
