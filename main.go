@@ -76,12 +76,13 @@ func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 	for {
 		select {
 		case v := <-interrupt:
-			if v == syscall.SIGQUIT || v == syscall.SIGTERM {
-				if err := cmd.Process.Kill(); err != nil {
-					log.Error().Msgf("Failed to kill subprocess: %v", err)
-				}
-				return 0
+			if v != syscall.SIGQUIT && v != syscall.SIGTERM {
+				continue
 			}
+			if err := cmd.Process.Kill(); err != nil {
+				log.Error().Msgf("Failed to kill subprocess: %v", err)
+			}
+			return 0
 		case x := <-c:
 			return x
 		}
