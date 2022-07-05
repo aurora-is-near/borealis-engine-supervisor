@@ -8,7 +8,7 @@ import (
 
 // Config contains all the configuration options that are read from environment variables.
 type Config struct {
-	PromotheusURL         string
+	PrometheusURL         string
 	MetricName            string
 	MetricDelta           int64
 	WarmupDurationSeconds int64
@@ -44,7 +44,7 @@ func ReadConfigFromEnv() (*Config, error) {
 		}
 	}
 	return &Config{
-		PromotheusURL:         conf.GetString("PROMURL"),
+		PrometheusURL:         conf.GetString("PROMURL"),
 		MetricDelta:           conf.GetInt64("METRICDELTA"),
 		MetricName:            conf.GetString("METRIC"),
 		WarmupDurationSeconds: conf.GetInt64("WARMUPDURATION"),

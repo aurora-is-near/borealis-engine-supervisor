@@ -1,7 +1,7 @@
 # borealis-engine-supervisor
 
-Supervisor starts a borealis-engine instance as a subprocess and monitors it through a Promotheus server.
-If the metric variable at Promotheus hasn't increased by an expected amount in the timeframe, a signal is sent to the subprocess to reset it.
+Supervisor starts a borealis-engine instance as a subprocess and monitors it through a Prometheus server.
+If the metric variable at Prometheus hasn't increased by an expected amount in the timeframe, a signal is sent to the subprocess to reset it.
 In case the borealis-engine instance still isn't producing output after state reset, another signal is sent to it to terminate it.
 
 ## Running

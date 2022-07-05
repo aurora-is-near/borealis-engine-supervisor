@@ -9,15 +9,15 @@ import (
 	"strings"
 )
 
-// promotheusClient is capable of retrieving a scalar metric value from a Promotheus server.
-type promotheusClient struct {
+// prometheusClient is capable of retrieving a scalar metric value from a Prometheus server.
+type prometheusClient struct {
 	url string
 	key string
 	c   http.Client
 }
 
 // Get returns the current metric data.
-func (p *promotheusClient) Get() (int64, error) {
+func (p *prometheusClient) Get() (int64, error) {
 	resp, err := p.c.Get(p.url)
 	if err != nil {
 		return 0, err
@@ -25,9 +25,9 @@ func (p *promotheusClient) Get() (int64, error) {
 	return extractMetricsData(resp.Body, p.key)
 }
 
-// NewPromotheusClient returns a client that can fetch a specific metric value from a server.
-func NewPromotheusClient(url, key string) *promotheusClient {
-	return &promotheusClient{
+// NewPrometheusClient returns a client that can fetch a specific metric value from a server.
+func NewPrometheusClient(url, key string) *prometheusClient {
+	return &prometheusClient{
 		url: url,
 		key: key,
 		c:   http.Client{},

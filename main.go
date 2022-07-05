@@ -26,7 +26,7 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT, syscall.SIGINT)
 
-	promMetrics := NewPromotheusClient(config.PromotheusURL, config.MetricName)
+	promMetrics := NewPrometheusClient(config.PrometheusURL, config.MetricName)
 
 	args := os.Args[1:]
 	if len(args) < 1 {
