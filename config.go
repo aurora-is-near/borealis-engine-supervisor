@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/spf13/viper"
 )
 
@@ -21,7 +19,7 @@ type Config struct {
 const envPrefix = "SUPERVISOR"
 
 /*
-envVars contains names of environment variables for supervisor configuration.
+defaults contains names of environment variables for supervisor configuration.
 SUPERVISOR_PROMURL: Address of the prometheus metrics exporter (http://127.0.0.1:8041)
 SUPERVISOR_METRIC: Name of the metric to test.
 SUPERVISOR_WARMUPDURATION: Seconds of warmup period.
@@ -30,18 +28,23 @@ SUPERVISOR_METRICDELTA: Expected metric delta between checks.
 SUPERVISOR_FAILSIGNAL: Signal to send if no increment of metric can be detected between first and second check.
 SUPERVISOR_HANGSIGNAL: Signal to send if no increment of metric can be detected between i and i+1 check (i > 1).
 */
-var envVars = [...]string{"PROMURL", "METRIC", "METRICDELTA", "WARMUPDURATION", "CHECKDURATION", "FAILSIGNAL", "HANGSIGNAL"}
+var defaults = map[string]string{
+	"PROMURL":        "http://127.0.0.1:8041",
+	"METRIC":         "engine_last_sequential_id_received",
+	"METRICDELTA":    "1",
+	"WARMUPDURATION": "300",
+	"CHECKDURATION":  "60",
+	"FAILSIGNAL":     "1",
+	"HANGSIGNAL":     "9",
+}
 
 // ReadConfigFromEnv reads all variables contained in envVars from the environment.
-func ReadConfigFromEnv() (*Config, error) {
+func ReadConfigFromEnv() *Config {
 	conf := viper.New()
 	conf.SetEnvPrefix(envPrefix)
 	conf.AllowEmptyEnv(false)
-	for _, name := range envVars {
-		conf.MustBindEnv(name)
-		if !conf.IsSet(name) {
-			return nil, fmt.Errorf(`Environment variable "%s_%s" is not set`, envPrefix, name)
-		}
+	for k, v := range defaults {
+		conf.SetDefault(k, v)
 	}
 	return &Config{
 		PrometheusURL:         conf.GetString("PROMURL"),
@@ -51,5 +54,5 @@ func ReadConfigFromEnv() (*Config, error) {
 		CheckDurationSeconds:  conf.GetInt64("CHECKDURATION"),
 		FailSignal:            conf.GetInt("FAILSIGNAL"),
 		HangSignal:            conf.GetInt("HANGSIGNAL"),
-	}, nil
+	}
 }

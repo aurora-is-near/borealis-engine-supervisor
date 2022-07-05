@@ -18,10 +18,7 @@ func main() {
 	out := zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339, NoColor: true}
 	log.Logger = log.Output(out)
 
-	config, err := ReadConfigFromEnv()
-	if err != nil {
-		log.Fatal().Msg(err.Error())
-	}
+	config := ReadConfigFromEnv()
 
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT, syscall.SIGINT)
