@@ -32,6 +32,8 @@ func main() {
 
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Env = os.Environ() // pass current environment to the subprocess
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
 
 	if err := cmd.Start(); err != nil {
 		log.Fatal().Msgf("Failed to start subprocess: %v", err)
