@@ -99,26 +99,38 @@ func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 // start -> wait_warmup -> stuck -> send_fail_signal
 func watchMetrics(tickSleep, warmUpSleep func(), requiredDelta int64, sendFailSignal, sendHangSignal func() error, getMetrics func() (int64, error)) {
 	var prevProgress bool
+	var lastMetricsTime time.Time
 	prev, err := getMetrics()
 	if err != nil {
 		log.Error().Msgf("Failed to fetch metrics data: %v", err)
 	}
+	lastMetricsTime = time.Now()
 	warmUpSleep()
 	for {
 		curr, err := getMetrics()
 		if err != nil {
 			log.Error().Msgf("Failed to fetch metrics data: %v", err)
+			if lastMetricsTime.Add(time.Minute * 2).Before(time.Now()) {
+				log.Info().Msg("Supervisor: Engine never connected")
+				lastMetricsTime = time.Now()
+				if err := sendFailSignal(); err != nil {
+					log.Error().Msgf("Failed to send fail signal: %v", err)
+				}
+			}
 			tickSleep()
 			continue
 		}
+		lastMetricsTime = time.Now()
 		delta := curr - prev
 		hasProgressed := delta >= requiredDelta
 		if !hasProgressed && !prevProgress {
+			log.Info().Msg("Supervisor: Engine not connected")
 			if err := sendFailSignal(); err != nil {
 				log.Error().Msgf("Failed to send fail signal: %v", err)
 			}
 			warmUpSleep()
 		} else if !hasProgressed {
+			log.Info().Msg("Supervisor: Engine falling behind")
 			if err := sendHangSignal(); err != nil {
 				log.Error().Msgf("Failed to send hang signal: %v", err)
 			}
