@@ -24,6 +24,13 @@ func main() {
 	signal.Notify(interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT, syscall.SIGINT)
 
 	promMetrics := NewPrometheusClient(config.PrometheusURL, config.MetricName)
+	metricsGet := func() int64 {
+		i, err := promMetrics.Get()
+		if err != nil {
+			log.Err(err).Msgf("Failed to get metrics: %s", err)
+		}
+		return i
+	}
 
 	args := os.Args[1:]
 	if len(args) < 1 {
@@ -57,7 +64,7 @@ func main() {
 		<-time.After(time.Duration(config.WarmupDurationSeconds) * time.Second)
 	}
 
-	go watchMetrics(tickSleep, warmUpSleep, config.MetricDelta, sendFailSignal, sendHangSignal, promMetrics.Get)
+	go watchMetrics(tickSleep, warmUpSleep, config.MetricDelta, sendFailSignal, sendHangSignal, metricsGet)
 	retcode = waitCommand(cmd, interrupt)
 }
 
@@ -97,30 +104,12 @@ func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 // start -> wait_warmup -> progress -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> progress -> progress -> ...
 // start -> wait_warmup -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> stuck -> send_fail_signal
 // start -> wait_warmup -> stuck -> send_fail_signal
-func watchMetrics(tickSleep, warmUpSleep func(), requiredDelta int64, sendFailSignal, sendHangSignal func() error, getMetrics func() (int64, error)) {
+func watchMetrics(tickSleep, warmUpSleep func(), requiredDelta int64, sendFailSignal, sendHangSignal func() error, getMetrics func() int64) {
 	var prevProgress bool
-	var lastMetricsTime time.Time
-	prev, err := getMetrics()
-	if err != nil {
-		log.Error().Msgf("Failed to fetch metrics data: %v", err)
-	}
-	lastMetricsTime = time.Now()
+	prev := getMetrics()
 	warmUpSleep()
 	for {
-		curr, err := getMetrics()
-		if err != nil {
-			log.Error().Msgf("Failed to fetch metrics data: %v", err)
-			if lastMetricsTime.Add(time.Minute * 2).Before(time.Now()) {
-				log.Info().Msg("Supervisor: Engine never connected")
-				lastMetricsTime = time.Now()
-				if err := sendFailSignal(); err != nil {
-					log.Error().Msgf("Failed to send fail signal: %v", err)
-				}
-			}
-			tickSleep()
-			continue
-		}
-		lastMetricsTime = time.Now()
+		curr := getMetrics()
 		delta := curr - prev
 		hasProgressed := delta >= requiredDelta
 		if !hasProgressed && !prevProgress {
