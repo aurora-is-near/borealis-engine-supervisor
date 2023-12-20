@@ -55,7 +55,7 @@ func extractMetricsData(r io.Reader, key string) (int64, error) {
 		}
 		s = strings.TrimSpace(strings.TrimPrefix(s, key))
 		if strings.HasPrefix(s, "{") {
-			p := strings.Index(s, "}")
+			p := strings.LastIndex(s, "}")
 			if p >= 0 && p < len(s)-1 {
 				s = strings.TrimSpace(s[p+1:])
 			} else {
