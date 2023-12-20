@@ -24,12 +24,13 @@ func main() {
 	signal.Notify(interrupt, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGQUIT, syscall.SIGABRT, syscall.SIGINT)
 
 	promMetrics := NewPrometheusClient(config.PrometheusURL, config.MetricName)
-	metricsGet := func() int64 {
+	metricsGet := func() (int64, error) {
 		i, err := promMetrics.Get()
 		if err != nil {
 			log.Err(err).Msgf("Failed to get metrics: %s", err)
+			return 0, err
 		}
-		return i
+		return i, nil
 	}
 
 	args := os.Args[1:]
@@ -104,12 +105,12 @@ func waitCommand(cmd *exec.Cmd, interrupt <-chan os.Signal) int {
 // start -> wait_warmup -> progress -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> progress -> progress -> ...
 // start -> wait_warmup -> progress -> progress -> stuck -> send_hang_signal -> wait_warmup -> stuck -> send_fail_signal
 // start -> wait_warmup -> stuck -> send_fail_signal
-func watchMetrics(tickSleep, warmUpSleep func(), requiredDelta int64, sendFailSignal, sendHangSignal func() error, getMetrics func() int64) {
+func watchMetrics(tickSleep, warmUpSleep func(), requiredDelta int64, sendFailSignal, sendHangSignal func() error, getMetrics func() (int64, error)) {
 	var prevProgress bool
-	prev := getMetrics()
+	prev, _ := getMetrics()
 	warmUpSleep()
 	for {
-		curr := getMetrics()
+		curr, _ := getMetrics()
 		delta := curr - prev
 		hasProgressed := delta >= requiredDelta
 		if !hasProgressed && !prevProgress {

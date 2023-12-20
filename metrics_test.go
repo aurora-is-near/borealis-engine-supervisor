@@ -20,7 +20,7 @@ func TestExtractMetricsData(t *testing.T) {
 engine_http_prometheus_requests_total 1
 # HELP engine_last_block_height_processed Block height of the last message processed
 # TYPE engine_last_block_height_processed gauge
-engine_last_block_height_processed 93273959
+engine_last_block_height_processed{version="1.3.1"}93273959
 `,
 			key:  "engine_last_block_height_processed",
 			want: 93273959,
