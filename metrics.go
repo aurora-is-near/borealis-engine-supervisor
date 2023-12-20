@@ -43,6 +43,7 @@ func extractMetricsData(r io.Reader, key string) (int64, error) {
 		found  bool
 		err    error
 	)
+	_, _ = fmt.Fprintf(os.Stdout, "Supervisor: ExtractMetrics\n")
 	keyAndSpace := fmt.Sprintf("%s ", key)
 	keyAndVersion := fmt.Sprintf("%s{", key)
 	sc := bufio.NewScanner(r)
@@ -73,6 +74,6 @@ func extractMetricsData(r io.Reader, key string) (int64, error) {
 	if !found {
 		return 0, fmt.Errorf("could not find datapoint %q in metrics data", key)
 	}
-	_, _ = fmt.Fprintf(os.Stdout, "ProcessedBlock: %d\n", result)
+	_, _ = fmt.Fprintf(os.Stdout, "Supervisor: ProcessedBlock %d\n", result)
 	return result, nil
 }
