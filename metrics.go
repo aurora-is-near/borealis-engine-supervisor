@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -72,5 +73,6 @@ func extractMetricsData(r io.Reader, key string) (int64, error) {
 	if !found {
 		return 0, fmt.Errorf("could not find datapoint %q in metrics data", key)
 	}
+	_, _ = fmt.Fprintf(os.Stderr, "ProcessedBlock: %d\n", result)
 	return result, nil
 }
